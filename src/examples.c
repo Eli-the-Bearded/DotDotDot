@@ -3,6 +3,34 @@
 #include "renderer.h"
 #include <stdio.h>
 
+// print all 256 eight bit patterns
+void try_them_all()
+{
+    int width = 64;
+    int height = 64;
+
+    grid *g = grid_new(width, height);
+    renderer_new(g);
+
+    renderer_update(g);
+
+    for (int s = 0; s < 256; s ++) {
+
+        for (int b = 0; b < 8; b ++) {
+	    int i = 2 * (s % 32) + (b / 4);
+	    int j = 4 * (s / 32) + (b % 4);
+	    if ( s & (1 << b) ) {
+                grid_set_pixel(g, i, j);
+	    } 
+        }
+        renderer_update(g);
+    } 
+
+    // Free allocations
+    renderer_free();
+    grid_free(g);
+}
+
 void example_filling_bar()
 {
     int width = 100;
@@ -126,3 +154,51 @@ void example_spiral_effect()
     renderer_free();
     grid_free(g);
 }
+
+void braille_graph( grid *g, double *f, int n )
+{
+    int    row=0,nrows=24, col=0,ncols=78;
+    double bigf=0.0,yval;
+
+    grid_clear(g);
+
+    for ( col=0; col<n; col++ )
+       if ( fabs(f[col]) > bigf ) bigf = fabs(f[col]);
+
+    for ( row=0; row<nrows; row++ ) {
+        yval = bigf*((double)(nrows/2-row))/((double)(nrows/2));
+
+        for ( col=0; col<ncols; col++ )
+	   if (yval*f[(col*(n-1))/(ncols-1)]>=yval*yval)
+	       grid_set_pixel(g, col, row);
+    }
+    
+    renderer_update(g);
+}
+
+void johnforkosh_function()
+{
+    int width = 80;
+    int height = 48;
+
+    double f[999], pi=3.14159;
+    double t=0.0, dt=0.05, w1=16.,w2=3.;  int Nt=50;
+    int    i=0, N=511;                    /* f[] index */
+
+    grid *g = grid_new(width, height);
+    renderer_new(g);
+    renderer_update(g);
+    
+    while ( --Nt > 0 ) {
+	for ( i=0; i<N; i++ ) {
+	    double x = 2.0*pi*((double)i)/((double)(N-1));
+	    f[i] = .75*sin(2.*x+pi/3.+w1*t) + 1.*sin(1.*x+pi/2.+w2*t);
+	}
+
+	braille_graph(g, f, N);
+	t += dt;
+    }
+    renderer_free();
+    grid_free(g);
+}
+
